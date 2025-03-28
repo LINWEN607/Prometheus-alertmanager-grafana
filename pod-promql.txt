@@ -1,0 +1,36 @@
+#pod内存
+(
+  sum by (namespace, pod) (
+    container_memory_working_set_bytes{container_name!="POD"}
+      and on(namespace, pod, container_name)
+      (container_spec_memory_limit_bytes{container_name!="POD"} > 0)
+  )
+  /
+  sum by (namespace, pod) (
+    container_spec_memory_limit_bytes{container_name!="POD"}
+      and on(namespace, pod, container_name)
+      (container_spec_memory_limit_bytes{container_name!="POD"} > 0)
+  )
+) * 100
+
+告警 - {{ .Labels.alertname }} ({{ .Labels.namespace }}/{{ .Labels.pod }}){{ $labels }}
+
+({{ .Labels.namespace }}的{{ .Labels.pod }})超过内存预警
+
+
+#节点
+(
+  sum(node_memory_MemAvailable_bytes) by (node, instance) 
+  / 
+  sum(node_memory_MemTotal_bytes) by (node, instance)
+) * 100
+
+
+Summary：
+[内存告警] 节点 {{ .Labels.node }}（IP: {{ .Labels.instance }}）内存使用率超过55阈值！
+
+**内存告警详情**：
+- 告警名称：{{ .Labels.alertname }}
+- 节点名称：{{ .Labels.node }}
+- 节点IP：{{ .Labels.instance }}  <!-- 直接显示完整 IP:端口 -->
+- 当前使用率：{{ $values.A | printf "%.2f" }}%
